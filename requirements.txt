@@ -1,0 +1,16 @@
+django
+django-cors-headers
+djangorestframework
+pillow
+django-redis
+mysqlclient
+redis
+django-minio-storage
+djangorestframework-simplejwt
+channels
+django-allauth
+requests
+cryptography
+elasticsearch==7.17.12
+django-elasticsearch-dsl
+daphne

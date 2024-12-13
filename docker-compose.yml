@@ -1,0 +1,74 @@
+services:
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: yes
+      MYSQL_DATABASE: online_shop
+      MYSQL_USER: Mobin
+      MYSQL_PASSWORD: Mg1383013830
+    ports:
+      - "3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - backend
+
+  web:
+    build: .
+    command: sh -c '/app/wait-for-it.sh elasticsearch:9200 -- python manage.py makemigrations && python manage.py migrate && daphne -b 0.0.0.0 -p 8000 django_project.asgi:application'
+    volumes:
+      - .:/app
+    ports:
+      - "1542:8000"
+    depends_on:
+      - db
+      - elasticsearch
+      - redis
+    networks:
+      - backend
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+  minio:
+    image: minio/minio
+    restart: always
+    ports:
+      - "9000"
+    environment:
+      MINIO_ROOT_USER: mobin23
+      MINIO_ROOT_PASSWORD: Mg1383013830
+    command: server /data 
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.12
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true  # قفل حافظه برای جلوگیری از کرش
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - ELASTIC_PASSWORD=Mg1383013830
+    ports:
+      - "9200:9200"  # پورت Elasticsearch
+    networks:
+      - backend  # به همان شبکه‌ای که سایر سرویس‌ها هستند
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+volumes:
+  db_data: {}
+  minio_data: {}
+  elasticsearch_data: {}
+
+networks:
+  backend:
+    driver: bridge

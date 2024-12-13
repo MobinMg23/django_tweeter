@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tweet Explore</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 60%;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .tweet {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tweet:last-child {
+            border-bottom: none;
+        }
+
+        .tweet h3 {
+            margin: 0 0 10px;
+        }
+
+        .tweet p {
+            margin: 10px 0;
+            color: #555;
+        }
+
+        .actions {
+            margin-top: 10px;
+        }
+
+        .actions button {
+            border: none;
+            background: #007bff;
+            color: #fff;
+            padding: 8px 12px;
+            margin-right: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .actions button:hover {
+            background: #0056b3;
+        }
+
+        .comments {
+            margin-top: 15px;
+            padding-left: 20px;
+            border-left: 3px solid #007bff;
+        }
+
+        .comments h4 {
+            margin-bottom: 10px;
+        }
+
+        .comments p {
+            margin: 5px 0;
+        }
+
+        form {
+            margin-top: 15px;
+        }
+
+        form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        form button {
+            background: #28a745;
+        }
+
+        form button:hover {
+            background: #1e7e34;
+        }
+
+        .search-container {
+            margin: 20px auto;
+            width: 60%;
+            text-align: center;
+        }
+
+        .search-container input {
+            padding: 10px;
+            width: 80%;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .search-container button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .search-container button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Explore Tweets</h1>
+
+        <!-- Loop through tweets -->
+        {% for tweet in data %}
+        <div class="tweet" data-tweet-id="{{ tweet.pk }}">
+            <h3>{{ tweet.user }}</h3>
+            <p>{{ tweet.content }}</p>
+            <p>Likes: <span id="like-count-{{ tweet.pk }}">{{ tweet.likes_count }}</span></p>
+            <p>Created At: {{ tweet.created_at }}</p>
+
+            <div class="actions">
+                <!-- Like/Unlike -->
+                <button onclick="likeTweet('{{ tweet.pk }}')">Like</button>
+
+                <!-- Follow/Unfollow -->
+                <button id="follow-btn-{{ tweet.user_id }}" onclick="followUnfollow('{{ tweet.user_id }}')">
+                    {% if tweet.user_is_followed %}
+                    Unfollow
+                    {% else %}
+                    Follow
+                    {% endif %}
+                </button>
+
+                <!-- Show Comments -->
+                <button onclick="toggleComments('{{ tweet.pk }}')">View Comments</button>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="comments" id="comments-{{ tweet.pk }}" style="display: none;">
+                <h4>Comments</h4>
+                <div id="comments-list-{{ tweet.pk }}">
+                    <!-- Dynamic Comments Here -->
+                </div>
+
+                <!-- Add Comment Form -->
+                <form onsubmit="addComment(event, '{{ tweet.pk }}')">
+                    <textarea id="comment-text-{{ tweet.pk }}" rows="3" placeholder="Write a comment..."></textarea>
+                    <button type="submit">Add Comment</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-container">
+        <form id="hashtag-search-form" onsubmit="searchHashtag(event)">
+            <input type="text" id="hashtag-query" name="hashtag" placeholder="Search by hashtag" required />
+            <button type="submit">Search</button>
+        </form>
+        <div id="hashtag-results"></div>
+    </div>
+
+    <div class="search-container">
+        <form id="username-search-form" onsubmit="searchUsername(event)">
+            <input type="text" id="username-query" name="username" placeholder="Search by username" required />
+            <button type="submit">Search</button>
+        </form>
+        <div id="username-results"></div>
+    </div>
+
+    <script>
+        // بررسی وجود توکن
+const token = localStorage.getItem('token');
+if (!token) {
+    alert('You are not authenticated. Please log in.');
+    window.location.href = '/login/';
+}
+
+// نمایش اعلان‌ها
+function showNotification(message) {
+    alert(message);
+}
+
+// لایک/آنلایک
+function likeTweet(tweetId) {
+    fetch(`/tweet-like/${tweetId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.Notif) {
+            const likeCount = document.getElementById(`like-count-${tweetId}`);
+            const isLiked = data.Notif === 'Like';
+            likeCount.textContent = parseInt(likeCount.textContent) + (isLiked ? 1 : -1);
+            showNotification(isLiked ? 'Liked this tweet!' : 'Unliked this tweet!');
+        } else {
+            showNotification('Error liking the tweet.');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// فالو/آنفالو
+function followUnfollow(userId) {
+    fetch(`/follow/${userId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.action) {
+            const followButton = document.getElementById(`follow-btn-${userId}`);
+            followButton.textContent = data.action === 'follow' ? 'Unfollow' : 'Follow';
+            showNotification(data.message);
+        } else {
+            showNotification('Error following/unfollowing.');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// نمایش/پنهان کردن نظرات
+function toggleComments(tweetId) {
+    const commentsDiv = document.getElementById(`comments-${tweetId}`);
+    if (commentsDiv.style.display === 'none') {
+        commentsDiv.style.display = 'block';
+        fetchComments(tweetId);
+    } els
+
+    </script>
+</body>
+
+</html>

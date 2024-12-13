@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hashtag Search</title>
+</head>
+<body>
+    <h1>Search for Hashtags</h1>
+
+    <!-- فرم جستجو -->
+    <form method="get" action="{% url 'search_hashtags' %}">
+        <input type="text" name="hashtag" placeholder="Enter hashtag" value="{{ hashtag_query }}">
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- نمایش نتایج -->
+    {% if results %}
+        <h2>Results for "{{ hashtag_query }}":</h2>
+        <ul>
+            {% for result in results %}
+                <li>
+                    <strong>Content:</strong> {{ result.content }} <br>
+                    <strong>Hashtag:</strong> {{ result.hashtag }} <br>
+                    <strong>Created at:</strong> {{ result.created_at }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        {% if hashtag_query %}
+            <p>No results found for "{{ hashtag_query }}"</p>
+        {% endif %}
+    {% endif %}
+</body>
+</html>
