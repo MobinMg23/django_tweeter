@@ -23,7 +23,8 @@ urlpatterns = [
 
     # For LIke
     path('tweet-like/<int:id>/', AddLike.as_view(), name='add_like'),
-
+    
     # For Explore
-    path('explore/', TweetExplore.as_view(), name='tweet_explore'),
+     path('explore/', TweetExplore.as_view(), name='tweet_explore')
+
 ]

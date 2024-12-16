@@ -40,7 +40,6 @@ class AddLike(APIView):
             cache.decr(cache_key, delta=1)
 
             return Response({'Notif': 'UnLike'}, status=status.HTTP_200_OK)
-            
 
                     
 

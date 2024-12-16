@@ -4,7 +4,7 @@ import json
 
 class FollowConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.user_id = ['url_route']['kwargs']['user_id']   
+        self.user_id = self.scope['url_route']['kwargs']['user_id']   
         self.room_group_name = f'user_{self.user_id}_follows'
 
         await self.channel_layer.group_add(
@@ -24,4 +24,3 @@ class FollowConsumer(AsyncWebsocketConsumer):
             'type': 'follow_update',
             'followers_count': event['followers_count'],
         }))
-        
